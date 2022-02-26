@@ -1,47 +1,63 @@
 FROM ubuntu
-LABEL auhtor="tangrui.tory"
+LABEL maintainer="tangrui.tory"
 
+# setting locale
+ENV LANG en_US.UTF-8
 
-# 设置时区
+# color env
+ENV COLORTERM truecolor
+ENV TERM xterm-256color
+
+# timezone
 ARG TZ=Asia/Shanghai
 ENV TZ ${TZ}
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 用 root 用户操作
+# user root
 USER root
+RUN echo 'root:root' | chpasswd
 
-# 更新源，安装相应工具
+# install common utls
 RUN apt-get update && apt-get install -y \
+    sudo\
     zsh \
     vim \
     wget \
     curl \
     python \
-    git-core
+    git-core \
+    locales
 
-#  安装 oh-my-zsh，以后进入容器中时，更加方便地使用 shell
-RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh \
-    && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
+#  install oh-my-zsh and some plugin
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
     && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
     && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
     && sed -i 's/^plugins=(/plugins=(zsh-autosuggestions zsh-syntax-highlighting z /' ~/.zshrc \
     && chsh -s /bin/zsh
 
-    # 创建 me 用户
+# add user me
 RUN useradd --create-home --no-log-init --shell /bin/zsh -G sudo me 
 RUN adduser me sudo
-RUN echo 'me:password' | chpasswd
+RUN echo 'me:me' | chpasswd
 
-# 为 me 安装 omz
 USER me
-RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh \
-    && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
+
+# change locale to utf-8
+RUN echo "me" | sudo -S locale-gen en_US.UTF-8 \
+    && sudo update-locale LANG=en_US.UTF-8
+
+# install omz for me
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
     && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
     && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
     && sed -i 's/^plugins=(/plugins=(zsh-autosuggestions zsh-syntax-highlighting z /' ~/.zshrc
 
-# 安装 nvm 和 node
+# install zsh theme: powerlevel10k
+RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k \
+    && echo "source ~/powerlevel10k/powerlevel10k.zsh-theme" >> ~/.zshrc
+
+# install nvm and node
 ENV NVM_DIR /home/me/.nvm
 ENV NODE_VERSION v14
 RUN mkdir -p $NVM_DIR && \
@@ -59,7 +75,7 @@ RUN echo '' >> ~/.zshrc \
     && echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc \
     && echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.zshrc
 
-# 安装 yarn
+# install yarn
 RUN curl -o- -L https://yarnpkg.com/install.sh | bash; \
     echo '' >> ~/.zshrc && \
     echo 'export PATH="$HOME/.yarn/bin:$PATH"' >> ~/.zshrc
@@ -83,8 +99,8 @@ ENV PATH $PATH:/home/me/.node-bin
 # Add PATH for YARN
 ENV PATH $PATH:/home/me/.yarn/bin
 
-# 删除 apt/lists，可以减少最终镜像大小，详情见：https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#general-guidelines-and-recommendations
+# delete apt/lists to minus final image size. see：https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#general-guidelines-and-recommendations
 USER root
 RUN rm -rf /var/lib/apt/lists/*
 
-WORKDIR /var/www
+WORKDIR /home/me
