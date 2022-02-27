@@ -10,7 +10,6 @@
     - wget
     - curl
     - brew
-    - thefuck
     - node
     - yarn
     - nvm
