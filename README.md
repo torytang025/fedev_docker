@@ -9,7 +9,6 @@
     - vim
     - wget
     - curl
-    - brew
     - node
     - yarn
     - nvm
