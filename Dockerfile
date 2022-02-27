@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:20.04
 LABEL maintainer="tangrui.tory"
 
 # setting locale
@@ -10,8 +10,6 @@ ENV TERM xterm-256color
 
 # timezone
 ARG TZ=Asia/Shanghai
-ENV TZ ${TZ}
-
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # user root
@@ -33,7 +31,7 @@ RUN apt-get update && apt-get install -y \
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
     && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
     && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
-    && sed -i 's/^plugins=(/plugins=(zsh-autosuggestions zsh-syntax-highlighting z /' ~/.zshrc \
+    && sed -i 's/^plugins=(/plugins=(sudo zsh-autosuggestions zsh-syntax-highlighting z /' ~/.zshrc \
     && chsh -s /bin/zsh
 
 # add user me
@@ -51,15 +49,25 @@ RUN echo "me" | sudo -S locale-gen en_US.UTF-8 \
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
     && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
     && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
-    && sed -i 's/^plugins=(/plugins=(zsh-autosuggestions zsh-syntax-highlighting z /' ~/.zshrc
+    && sed -i 's/^plugins=(/plugins=(sudo zsh-autosuggestions zsh-syntax-highlighting z /' ~/.zshrc
 
 # install zsh theme: powerlevel10k
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k \
     && echo "source ~/powerlevel10k/powerlevel10k.zsh-theme" >> ~/.zshrc
 
+# install brew
+RUN echo "me" | sudo -S mkdir -p /home/linuxbrew/.linuxbrew \
+    && echo "me" | sudo -S chmod -R 777 /home/linuxbrew/.linuxbrew \
+    && echo "me" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# add brew to path
+RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/me/.profile \
+    && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
+    && echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.profile
+
 # install nvm and node
-ENV NVM_DIR /home/me/.nvm
-ENV NODE_VERSION v14
+ARG NVM_DIR=/home/me/.nvm
+ARG NODE_VERSION=v16
 RUN mkdir -p $NVM_DIR && \
     curl -o- https://gitee.com/mirrors/nvm/raw/master/install.sh | bash \
         && . $NVM_DIR/nvm.sh \
@@ -67,10 +75,8 @@ RUN mkdir -p $NVM_DIR && \
         && nvm use ${NODE_VERSION} \
         && nvm alias ${NODE_VERSION} \
         && ln -s `npm bin --global` /home/me/.node-bin \
-        && npm install --global nrm \
-        && nrm use taobao
+        && npm install --global nrm
 
-USER me
 RUN echo '' >> ~/.zshrc \
     && echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc \
     && echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.zshrc
@@ -87,20 +93,11 @@ RUN echo '' >> ~/.zshrc \
     && echo 'export NVM_DIR="/home/me/.nvm"' >> ~/.zshrc \
     && echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.zshrc
 
-USER root
-
 RUN echo '' >> ~/.zshrc \
     && echo 'export YARN_DIR="/home/me/.yarn"' >> ~/.zshrc \
     && echo 'export PATH="$YARN_DIR/bin:$PATH"' >> ~/.zshrc
 
-# Add PATH for node
-ENV PATH $PATH:/home/me/.node-bin
-
-# Add PATH for YARN
-ENV PATH $PATH:/home/me/.yarn/bin
-
 # delete apt/lists to minus final image size. see：https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#general-guidelines-and-recommendations
-USER root
 RUN rm -rf /var/lib/apt/lists/*
 
 WORKDIR /home/me
