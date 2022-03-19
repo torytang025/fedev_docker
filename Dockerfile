@@ -25,7 +25,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     python \
     git-core \
-    locales
+    locales \
+    lsof \
+    iputils-ping
 
 #  install oh-my-zsh and some plugin
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
