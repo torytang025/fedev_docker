@@ -9,10 +9,14 @@
     - vim
     - wget
     - curl
-    - node
-    - yarn
+    - lsof
+    - ping
+    - thefuck
+  - fe dev
+    - node v16
     - nvm
     - nrm
+    - yarn
   - zsh & oh-my-zsh
   - zsh plugins:
     - zsh-autosuggestions
@@ -33,6 +37,6 @@ This image has default users: root & me, and password is the same as username. S
 docker run --user=me --name dev1 -itd torytang025/fedev
 ```
 
-When you get into the container you created, you will access the [_powerlevel10k_](https://github.com/romkatv/powerlevel10k)'s builtin configuration wizard right from your terminal.
+When you get into the container you created, you will access [_powerlevel10k_](https://github.com/romkatv/powerlevel10k)'s builtin configuration wizard where you can customize your terminal style.
 
 After configuration, the default path has been set to /home/me. Enjoy code~.
