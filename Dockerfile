@@ -24,6 +24,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     python \
+    python3-distutils \
+    thefuck \
     git-core \
     locales \
     lsof \
@@ -56,6 +58,10 @@ RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/inst
 # install zsh theme: powerlevel10k
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k \
     && echo "source ~/powerlevel10k/powerlevel10k.zsh-theme" >> ~/.zshrc
+
+# add thefuck alia
+RUN echo "# thefuck alias" >> ~/.zshrc \
+    && echo "eval \$(thefuck --alias)" >> ~/.zshrc
 
 # install nvm and node
 ARG NVM_DIR=/home/me/.nvm
